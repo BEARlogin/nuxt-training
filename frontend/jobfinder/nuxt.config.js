@@ -40,6 +40,7 @@ export default {
 
   axios: {
       // proxy: true
+    credentials: true,
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

@@ -72,11 +72,11 @@
                 <p class="text-center">
                   <button
                     class="btn btn-success btn-xl btn-round"
-                    v-on:click="sendCreateReq"
+                    @click="updateVacancy"
                   >
                     Отредактируйте вакансию.
                   </button>
-                  <button class="btn btn-success btn-xl btn-round">
+                  <button @click="deleteVacancy" class="btn btn-success btn-xl btn-round">
                     Удалить вакансию.
                   </button>
                 </p>
@@ -88,18 +88,18 @@
       </header>
     </form>
 
-    <div class="wrapper" v-if="permission == 'no'">
+    <div class="wrapper" v-if="permission === 'no'">
       <AuthError />
     </div>
 
-    <div class="wrapper" v-if="permission == 'pending'">
+    <div class="wrapper" v-if="permission === 'pending'">
       <h4 class="loading_page">Страница загружается</h4>
     </div>
   </div>
 </template>
 
 <script>
-import { baseUrl, decode } from "../store/constants.js";
+import {baseUrl, decode} from "../../../store/constants.js";
 
 import Cookies from "universal-cookie";
 import axios from "axios";
@@ -108,7 +108,6 @@ import AuthError from "@/components/AuthError.vue";
 export default {
   components: { AuthError },
   layout: "company",
-
   data: () => ({
     permission: "pending",
     user: {},
@@ -124,9 +123,23 @@ export default {
   async mounted() {
     await this.userRole();
     this.checkPermission();
+    await this.fetchVacancy();
   },
 
   methods: {
+    async fetchVacancy() {
+      this.vacancy = await this.$axios.$get(`/vacancies/${this.$route.params.id}`);
+    },
+
+    async  updateVacancy() {
+      await this.$axios.$patch(`/vacancies/${this.$route.params.id}`,this.vacancy)
+    },
+
+    async  deleteVacancy() {
+      await this.$axios.$delete(`/vacancies/${this.$route.params.id}`)
+      return this.$router.replace('..')
+    },
+
     checkPermission() {
       const cookies = new Cookies();
       let token = cookies.get("token");
@@ -177,20 +190,24 @@ export default {
 
       this.vacancy.company_card = ccIds[0].id;
 
-      axios
-        .patch(`${baseUrl()}/vacancyapp/`, this.vacancy, {
-          headers,
-        })
-        .then((response) => {
-          console.log(response.data);
-          this.vacancy = {
-            position: "",
-            conditions: "",
-            duties: "",
-            requirements: "",
-          };
-        })
-        .catch(() => (this.error = true));
+      try {
+        const response = await  axios
+          .patch(`${baseUrl()}/vacancyapp/`, this.vacancy, {
+            headers,
+          })
+        console.log(response.data);
+        this.vacancy = {
+          position: "",
+          conditions: "",
+          duties: "",
+          requirements: "",
+        };
+      } catch (e) {
+        console.error(e)
+      }
+
+
+
     },
   },
 };
